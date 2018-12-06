@@ -32,10 +32,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class,
+@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ServiceListTest {
 

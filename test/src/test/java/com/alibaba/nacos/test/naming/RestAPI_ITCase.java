@@ -41,7 +41,7 @@ import java.net.URL;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
@@ -517,23 +517,6 @@ public class RestAPI_ITCase {
 
             }
         }
-    }
-
-    @Test
-    public void domList() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/domList",
-                Params.newParams()
-                        .appendParam("startPg", "0")
-                        .appendParam("pgSize", "10")
-                        .done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-
-        Assert.assertTrue(json.getJSONArray("domList").size() > 0);
     }
 
     @Test

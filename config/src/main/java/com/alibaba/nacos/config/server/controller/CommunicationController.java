@@ -29,15 +29,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-
 
 /**
  * 用于其他节点通知的控制器
- * 
+ *
  * @author boyan
  * @date 2010-5-7
  */
@@ -45,66 +42,65 @@ import java.io.IOException;
 @RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
 public class CommunicationController {
 
-    @Autowired
-    private DumpService dumpService;
+    private final DumpService dumpService;
+
+    private final LongPollingService longPollingService;
+
+    private String trueStr = "true";
 
     @Autowired
-    protected LongPollingService longPollingService;
-    
-    private String trueStr = "true";
-    
+    public CommunicationController(DumpService dumpService, LongPollingService longPollingService) {
+        this.dumpService = dumpService;
+        this.longPollingService = longPollingService;
+    }
+
     /**
      * 通知配置信息改变
-     *
      */
-	@RequestMapping(value="/dataChange", method = RequestMethod.GET)
-	@ResponseBody
-	public Boolean notifyConfigInfo(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-			@RequestParam(value = "tag", required = false) String tag) {
-		dataId = dataId.trim();
-		group = group.trim();
-		String lastModified = request.getHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED);
-		long lastModifiedTs = StringUtils.isEmpty(lastModified) ? -1 : Long.parseLong(lastModified);
-		String handleIp = request.getHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP);
-		String isBetaStr = request.getHeader("isBeta");
-		if (StringUtils.isNotBlank(isBetaStr) && trueStr.equals(isBetaStr)) {
-			dumpService.dump(dataId, group, tenant, lastModifiedTs, handleIp, true);
-		} else {
-			dumpService.dump(dataId, group, tenant, tag, lastModifiedTs, handleIp);
-		}
-		return true;
-	}
-    
+    @RequestMapping(value = "/dataChange", method = RequestMethod.GET)
+    @ResponseBody
+    public Boolean notifyConfigInfo(HttpServletRequest request, HttpServletResponse response,
+                                    @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                                    @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
+                                        String tenant,
+                                    @RequestParam(value = "tag", required = false) String tag) {
+        dataId = dataId.trim();
+        group = group.trim();
+        String lastModified = request.getHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED);
+        long lastModifiedTs = StringUtils.isEmpty(lastModified) ? -1 : Long.parseLong(lastModified);
+        String handleIp = request.getHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP);
+        String isBetaStr = request.getHeader("isBeta");
+        if (StringUtils.isNotBlank(isBetaStr) && trueStr.equals(isBetaStr)) {
+            dumpService.dump(dataId, group, tenant, lastModifiedTs, handleIp, true);
+        } else {
+            dumpService.dump(dataId, group, tenant, tag, lastModifiedTs, handleIp);
+        }
+        return true;
+    }
+
     /**
-	 * 在本台机器上获得订阅改配置的客户端信息
-	 */
-	@RequestMapping(value="/configWatchers", method = RequestMethod.GET)
-	@ResponseBody
-	public SampleResult getSubClientConfig(HttpServletRequest request,
-			HttpServletResponse response,
-			@RequestParam("dataId") String dataId,
-			@RequestParam("group") String group,
-			@RequestParam(value = "tenant", required = false) String tenant,
-			 ModelMap modelMap)
-			throws IOException, ServletException, Exception {
-		group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
-		SampleResult sampleResult = longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
-		return sampleResult;
-	}
-	
-	/**
-	 * 在本台机器上获得客户端监听的配置列表
-	 */
-	@RequestMapping(value= "/watcherConfigs", method = RequestMethod.GET)
-	@ResponseBody
-	public SampleResult getSubClientConfigByIp(HttpServletRequest request,
-			HttpServletResponse response,
-			@RequestParam("ip") String ip,
-			ModelMap modelMap)
-					throws IOException, ServletException, Exception {
-		SampleResult sampleResult = longPollingService.getCollectSubscribleInfoByIp(ip);
-		return sampleResult;
-	}
+     * 在本台机器上获得订阅改配置的客户端信息
+     */
+    @RequestMapping(value = "/configWatchers", method = RequestMethod.GET)
+    @ResponseBody
+    public SampleResult getSubClientConfig(HttpServletRequest request,
+                                           HttpServletResponse response,
+                                           @RequestParam("dataId") String dataId,
+                                           @RequestParam("group") String group,
+                                           @RequestParam(value = "tenant", required = false) String tenant,
+                                           ModelMap modelMap) {
+        group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
+        return longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
+    }
+
+    /**
+     * 在本台机器上获得客户端监听的配置列表
+     */
+    @RequestMapping(value = "/watcherConfigs", method = RequestMethod.GET)
+    @ResponseBody
+    public SampleResult getSubClientConfigByIp(HttpServletRequest request,
+                                               HttpServletResponse response, @RequestParam("ip") String ip,
+                                               ModelMap modelMap) {
+        return longPollingService.getCollectSubscribleInfoByIp(ip);
+    }
 }

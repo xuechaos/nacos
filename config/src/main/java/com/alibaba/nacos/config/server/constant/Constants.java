@@ -101,43 +101,23 @@ public class Constants {
      */
     public static final int RECV_WAIT_TIMEOUT = ONCE_TIMEOUT * 5;
 
-    public static final String BASE_PATH = "/nacos/v1/cs";
+    public static final String BASE_PATH = "/v1/cs";
 
-    public static final String DEFAULT_OPS_CONTROLLER_PATH = BASE_PATH + "/ops";
+    public static final String OPS_CONTROLLER_PATH = BASE_PATH + "/ops";
 
-    public static final String OPS_CONTROLLER_PATH = "${nacos.config.ops.path" + ":" + DEFAULT_OPS_CONTROLLER_PATH + "}";
+    public static final String CAPACITY_CONTROLLER_PATH = BASE_PATH + "/capacity";
 
-    public static final String DEFAULT_CAPACITY_CONTROLLER_PATH = BASE_PATH + "/capacity";
+    public static final String COMMUNICATION_CONTROLLER_PATH = BASE_PATH + "/communication";
 
-    public static final String CAPACITY_CONTROLLER_PATH = "${nacos.config.capacity.path" + ":" + DEFAULT_CAPACITY_CONTROLLER_PATH + "}";
+    public static final String CONFIG_CONTROLLER_PATH = BASE_PATH + "/configs";
 
-    public static final String DEFAULT_COMMUNICATION_CONTROLLER_PATH = BASE_PATH + "/communication";
+    public static final String HEALTH_CONTROLLER_PATH = BASE_PATH + "/health";
 
-//    public static final String COMMUNICATION_CONTROLLER_PATH = "${nacos.config.communication.path" + ":" + DEFAULT_COMMUNICATION_CONTROLLER_PATH + "}";
+    public static final String HISTORY_CONTROLLER_PATH = BASE_PATH + "/history";
 
-    public static final String COMMUNICATION_CONTROLLER_PATH = DEFAULT_COMMUNICATION_CONTROLLER_PATH;
+    public static final String LISTENER_CONTROLLER_PATH = BASE_PATH + "/listener";
 
-    public static final String DEFAULT_CONFIG_CONTROLLER_PATH = BASE_PATH + "/configs";
-
-    public static final String CONFIG_CONTROLLER_PATH = "${nacos.config.path" + ":" + DEFAULT_CONFIG_CONTROLLER_PATH + "}";
-
-    public static final String DEFAULT_HEALTH_CONTROLLER_PATH = BASE_PATH + "/health";
-
-//    public static final String HEALTH_CONTROLLER_PATH = "${nacos.config.health.path" + ":" + DEFAULT_HEALTH_CONTROLLER_PATH + "}";
-
-    public static final String HEALTH_CONTROLLER_PATH = DEFAULT_HEALTH_CONTROLLER_PATH;
-
-    public static final String DEFAULT_HISTORY_CONTROLLER_PATH = BASE_PATH + "/history";
-
-    public static final String HISTORY_CONTROLLER_PATH = "${nacos.config.history.path" + ":" + DEFAULT_HISTORY_CONTROLLER_PATH + "}";
-
-    public static final String DEFAULT_LISTENER_CONTROLLER_PATH = BASE_PATH + "/listener";
-
-    public static final String LISTENER_CONTROLLER_PATH = "${nacos.config.listener.path" + ":" + DEFAULT_LISTENER_CONTROLLER_PATH + "}";
-
-    public static final String DEFAULT_NAMESPACE_CONTROLLER_PATH = BASE_PATH + "/namespaces";
-
-    public static final String NAMESPACE_CONTROLLER_PATH = "${nacos.config.namespaces.path" + ":" + DEFAULT_NAMESPACE_CONTROLLER_PATH + "}";
+    public static final String NAMESPACE_CONTROLLER_PATH = BASE_PATH + "/namespaces";
 
     public static final String ENCODE = "UTF-8";
 
@@ -149,9 +129,9 @@ public class Constants {
 
     public static final int FLOW_CONTROL_INTERVAL = 1000;
 
-    public static final String LINE_SEPARATOR = Character.toString((char) 1);
+    public static final String LINE_SEPARATOR = Character.toString((char)1);
 
-    public static final String WORD_SEPARATOR = Character.toString((char) 2);
+    public static final String WORD_SEPARATOR = Character.toString((char)2);
 
     public static final String NACOS_LINE_SEPARATOR = "\r\n";
 
@@ -164,6 +144,9 @@ public class Constants {
      */
     public static final long TOTALTIME_INVALID_THRESHOLD = 60000;
 
+    /**
+     * 批量操作时, 单条数据的状态码
+     */
     /**
      * 发生异常
      */
