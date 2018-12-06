@@ -7,6 +7,10 @@ notifications:
       - mw_configcenter@list.alibaba-inc.com
   on_success: change
   on_failure: always
+  
+env:  
+  global:
+    - CODECOV_TOKEN: b1f740c8-1a43-447a-8a03-efb749f10dea
 
 language: java
 
