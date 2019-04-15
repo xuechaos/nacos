@@ -11,10 +11,11 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import $ from 'jquery';
+import React from 'react';
+import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
-import { getParams, setParams, request } from '../../../globalLib';
+import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
 import {
   Balloon,
   Button,
@@ -29,6 +30,7 @@ import {
   Radio,
   ConfigProvider,
 } from '@alifd/next';
+import validateContent from 'utils/validateContent';
 
 import './index.scss';
 
@@ -40,8 +42,14 @@ const { AutoComplete: Combobox } = Select;
 class NewConfig extends React.Component {
   static displayName = 'NewConfig';
 
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
+    this.successDialog = React.createRef();
     this.field = new Field(this);
     this.edasAppName = getParams('edasAppName') || '';
     this.edasAppId = getParams('edasAppId') || '';
@@ -222,6 +230,7 @@ class NewConfig extends React.Component {
       if (errors) {
         return;
       }
+      let { configType } = this.state;
       let content = '';
       const self = this;
       if (this.monacoEditor) {
@@ -230,59 +239,110 @@ class NewConfig extends React.Component {
         content = this.codeValue;
       }
       if (!content) {
+        Message.error({
+          content: locale.dataRequired,
+          align: 'cc cc',
+        });
         return;
       }
-      this.tenant = getParams('namespace') || '';
-      const payload = {
-        dataId: self.state.addonBefore + this.field.getValue('dataId'),
-        group: this.field.getValue('group'),
-        content,
-        desc: this.field.getValue('desc'),
-        config_tags: this.state.config_tags.join(),
-        type: this.state.configType,
-        appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
-        tenant: this.tenant,
-      };
-      this.serverId = getParams('serverId') || 'center';
-      const url = 'v1/cs/configs';
-      request({
-        type: 'post',
-        contentType: 'application/x-www-form-urlencoded',
-        url,
-        data: payload,
-        beforeSend: () => {
-          this.openLoading();
-        },
-        success(res) {
-          const _payload = {};
-          _payload.maintitle = locale.newListingMain;
-          _payload.title = locale.newListing;
-          _payload.content = '';
-          _payload.dataId = payload.dataId;
-          _payload.group = payload.group;
-          if (res === true) {
-            self.group = payload.group;
-            self.dataId = payload.dataId;
-            setParams({ group: payload.group, dataId: payload.dataId }); // 设置参数
-            _payload.isok = true;
-          } else {
-            _payload.isok = false;
-            _payload.message = res.message;
-          }
-          self.refs.success.openDialog(_payload);
-        },
-        complete() {
-          self.closeLoading();
-        },
-        error(res) {
-          Dialog.alert({
-            content: locale.publishFailed,
-          });
-          self.closeLoading();
-        },
-      });
+
+      if (validateContent.validate({ content, type: configType })) {
+        this.publicConfigBeforeCheck(content);
+      } else {
+        Dialog.confirm({
+          content: locale.confirmSyanx,
+          language: aliwareIntl.currentLanguageCode || 'zh-cn',
+          onOk: () => {
+            this.publicConfigBeforeCheck(content);
+          },
+        });
+      }
     });
   }
+
+  /**
+   * 因为后端接口没有做是否存在配置逻辑 会覆盖原先配置 所以提交前先判断是否存在
+   */
+  publicConfigBeforeCheck = content => {
+    const { locale = {} } = this.props;
+    const { addonBefore } = this.state;
+    request({
+      url: 'v1/cs/configs',
+      data: {
+        show: 'all',
+        dataId: addonBefore + this.field.getValue('dataId'),
+        group: this.field.getValue('group'),
+        tenant: getParams('namespace') || '',
+      },
+      success: res => {
+        // 返回成功 说明存在就不提交配置
+        Message.error({
+          content: locale.dataIdExists,
+          align: 'cc cc',
+        });
+      },
+      error: err => {
+        // 后端接口很不规范 响应为空 说明没有数据 就可以新增
+        this._publishConfig(content);
+      },
+    });
+  };
+
+  _publishConfig = content => {
+    const self = this;
+    const { locale = {} } = this.props;
+    let { addonBefore, config_tags, configType } = this.state;
+    this.tenant = getParams('namespace') || '';
+    const payload = {
+      dataId: addonBefore + this.field.getValue('dataId'),
+      group: this.field.getValue('group'),
+      content,
+      desc: this.field.getValue('desc'),
+      config_tags: config_tags.join(),
+      type: configType,
+      appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
+      tenant: this.tenant,
+    };
+    this.serverId = getParams('serverId') || 'center';
+    const url = 'v1/cs/configs';
+    request({
+      type: 'post',
+      contentType: 'application/x-www-form-urlencoded',
+      url,
+      data: payload,
+      beforeSend: () => {
+        this.openLoading();
+      },
+      success(res) {
+        const _payload = {};
+        _payload.maintitle = locale.newListingMain;
+        _payload.title = locale.newListing;
+        _payload.content = '';
+        _payload.dataId = payload.dataId;
+        _payload.group = payload.group;
+        if (res === true) {
+          self.group = payload.group;
+          self.dataId = payload.dataId;
+          setParams({ group: payload.group, dataId: payload.dataId }); // 设置参数
+          _payload.isok = true;
+        } else {
+          _payload.isok = false;
+          _payload.message = res.message;
+        }
+        self.successDialog.current.getInstance().openDialog(_payload);
+      },
+      complete() {
+        self.closeLoading();
+      },
+      error(res) {
+        Dialog.alert({
+          language: aliwareIntl.currentLanguageCode || 'zh-cn',
+          content: locale.publishFailed,
+        });
+        self.closeLoading();
+      },
+    });
+  };
 
   changeEnv(values) {
     this.targetEnvs = values;
@@ -373,8 +433,8 @@ class NewConfig extends React.Component {
           color={'#333'}
         >
           <h1>{locale.newListing}</h1>
-          <Form field={this.field}>
-            <FormItem label={'Data ID:'} required {...formItemLayout}>
+          <Form className="new-config-form" field={this.field} {...formItemLayout}>
+            <FormItem label={'Data ID:'} required>
               <Input
                 {...init('dataId', {
                   rules: [
@@ -382,13 +442,10 @@ class NewConfig extends React.Component {
                       required: true,
                       message: locale.newConfig,
                     },
-                    {
-                      max: 255,
-                      message: locale.dataIdIsNotEmpty,
-                    },
                     { validator: this.validateChart.bind(this) },
                   ],
                 })}
+                maxLength={255}
                 addonTextBefore={
                   this.state.addonBefore ? (
                     <div style={{ minWidth: 100, color: '#373D41' }}>{this.state.addonBefore}</div>
@@ -396,7 +453,7 @@ class NewConfig extends React.Component {
                 }
               />
             </FormItem>
-            <FormItem label={'Group:'} required {...formItemLayout}>
+            <FormItem label={'Group:'} required>
               <Combobox
                 style={{ width: '100%' }}
                 size={'large'}
@@ -423,49 +480,52 @@ class NewConfig extends React.Component {
             </FormItem>
             <FormItem
               label={' '}
-              {...formItemLayout}
               style={{ display: this.state.showGroupWarning ? 'block' : 'none' }}
             >
               <Message type={'warning'} size={'medium'} animation={false}>
                 {locale.annotation}
               </Message>
             </FormItem>
-            <FormItem label={''} {...formItemLayout}>
-              <div>
+
+            <FormItem
+              label={locale.tags}
+              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+            >
+              <Select
+                size={'medium'}
+                hasArrow
+                style={{ width: '100%', height: '100%!important' }}
+                autoWidth
+                multiple
+                mode="tag"
+                filterLocal
+                placeholder={locale.pleaseEnterTag}
+                dataSource={this.state.tagLst}
+                value={this.state.config_tags}
+                onChange={this.setConfigTags.bind(this)}
+                hasClear
+              />
+            </FormItem>
+
+            <FormItem
+              label={locale.groupIdCannotBeLonger}
+              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+            >
+              <Input {...init('appName')} readOnly={this.inApp} />
+            </FormItem>
+            <FormItem label=" ">
+              <div className="more-container">
                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
                   {this.state.showmore ? locale.dataIdLength : locale.collapse}
                 </a>
               </div>
             </FormItem>
 
-            <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
-              <FormItem label={locale.tags} {...formItemLayout}>
-                <Select
-                  size={'medium'}
-                  hasArrow
-                  style={{ width: '100%', height: '100%!important' }}
-                  autoWidth
-                  multiple
-                  mode="tag"
-                  filterLocal
-                  placeholder={locale.pleaseEnterTag}
-                  dataSource={this.state.tagLst}
-                  value={this.state.config_tags}
-                  onChange={this.setConfigTags.bind(this)}
-                  hasClear
-                />
-              </FormItem>
-
-              <FormItem label={locale.groupIdCannotBeLonger} {...formItemLayout}>
-                <Input {...init('appName')} readOnly={this.inApp} />
-              </FormItem>
-            </div>
-
-            <FormItem label={locale.description} {...formItemLayout}>
+            <FormItem label={locale.description}>
               <Input.TextArea htmlType={'text'} multiple rows={3} {...init('desc')} />
             </FormItem>
 
-            <FormItem label={locale.targetEnvironment} {...formItemLayout}>
+            <FormItem label={locale.targetEnvironment}>
               <RadioGroup
                 dataSource={list}
                 value={this.state.configType}
@@ -483,9 +543,8 @@ class NewConfig extends React.Component {
                         size={'small'}
                         style={{
                           color: '#1DC11D',
-                          marginRight: 5,
+                          margin: '0 5px',
                           verticalAlign: 'middle',
-                          marginTop: 2,
                         }}
                       />
                     }
@@ -500,12 +559,11 @@ class NewConfig extends React.Component {
                 </span>
               }
               required
-              {...formItemLayout}
             >
               <div id={'container'} style={{ width: '100%', height: 300 }} />
             </FormItem>
 
-            <FormItem {...formItemLayout} label={''}>
+            <FormItem label=" ">
               <div style={{ textAlign: 'right' }}>
                 <Button
                   type={'primary'}
@@ -521,7 +579,7 @@ class NewConfig extends React.Component {
               </div>
             </FormItem>
           </Form>
-          <SuccessDialog ref={'success'} />
+          <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>
     );

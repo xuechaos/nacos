@@ -18,7 +18,6 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,9 +51,20 @@ public class DeregisterInstance_ITCase {
 
     @Before
     public void init() throws Exception {
+
+        NamingBase.prepareServer(port);
+
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
+            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        }
+
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 
@@ -65,17 +75,16 @@ public class DeregisterInstance_ITCase {
      */
     @Test
     public void dregDomTest() throws Exception {
-
         String serviceName = randomDomainName();
-
+        System.out.println(serviceName);
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT);
 
-        TimeUnit.SECONDS.sleep(3);
-
         List<Instance> instances = naming.getAllInstances(serviceName);
+        verifyInstanceList(instances, 2, serviceName);
 
-        Assert.assertEquals(instances.size(), 2);
+        instances = naming.getAllInstances(serviceName);
+        Assert.assertEquals(2, instances.size());
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
 
@@ -88,10 +97,9 @@ public class DeregisterInstance_ITCase {
 
         naming.deregisterInstance(serviceName, "127.0.0.2", TEST_PORT);
 
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(3);
 
         instances = naming.getAllInstances(serviceName);
-
         Assert.assertEquals(0, instances.size());
     }
 
@@ -110,11 +118,11 @@ public class DeregisterInstance_ITCase {
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
 
-        TimeUnit.SECONDS.sleep(5);
-
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
+        verifyInstanceList(instances, 2, serviceName);
 
+        instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(instances.size(), 2);
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
@@ -123,7 +131,7 @@ public class DeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
 
         instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
         Assert.assertEquals(instances.size(), 1);
@@ -147,11 +155,11 @@ public class DeregisterInstance_ITCase {
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
 
-        TimeUnit.SECONDS.sleep(5);
-
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
+        verifyInstanceList(instances, 2, serviceName);
 
+        instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(instances.size(), 2);
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
@@ -169,6 +177,19 @@ public class DeregisterInstance_ITCase {
         TimeUnit.SECONDS.sleep(5);
         instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(instances.size(), 0);
+    }
+
+    public void verifyInstanceList(List<Instance> instances, int size, String serviceName) throws Exception {
+        int i = 0;
+        while ( i < 20 ) {
+            instances = naming.getAllInstances(serviceName);
+            if (instances.size() == size) {
+                break;
+            } else {
+                TimeUnit.SECONDS.sleep(3);
+                i++;
+            }
+        }
     }
 
 

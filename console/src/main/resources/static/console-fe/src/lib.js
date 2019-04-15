@@ -26,6 +26,14 @@ window.globalConfig = {
 request.middleWare((_config = {}) => {
   let config = _config;
   let { url = '' } = config;
+
+  const namespace = localStorage.getItem('namespace') ? localStorage.getItem('namespace') : '';
+  // 如果url中已经有 namespaceId, 不在data中添加namespaceId
+  config.data =
+    url.indexOf('namespaceId=') === -1
+      ? Object.assign({}, config.data, { namespaceId: namespace })
+      : config.data;
+
   let tenant = window.nownamespace || getParams('namespace') || '';
   tenant = tenant === 'global' ? '' : tenant;
   const splitArr = url.split('?');
@@ -95,7 +103,7 @@ request.middleWare((_config = {}) => {
  * 配置 monaco
  */
 window.require.config({
-  paths: { vs: 'js/vs' },
+  paths: { vs: process.env.NODE_ENV === 'production' ? 'console-fe/public/js/vs' : 'js/vs' },
 });
 window.require.config({
   'vs/nls': {

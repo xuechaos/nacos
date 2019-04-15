@@ -41,7 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
 
 /**
@@ -60,7 +60,7 @@ public class ConfigServletInner {
 
     private static final int TRY_GET_LOCK_TIMES = 9;
 
-    private static final int START_LONGPULLING_VERSION_NUM = 204;
+    private static final int START_LONGPOLLING_VERSION_NUM = 204;
 
     /**
      * 轮询接口
@@ -70,8 +70,8 @@ public class ConfigServletInner {
         throws IOException, ServletException {
 
         // 长轮询
-        if (LongPollingService.isSupportLongPulling(request)) {
-            longPollingService.addLongPullingClient(request, response, clientMd5Map, probeRequestSize);
+        if (LongPollingService.isSupportLongPolling(request)) {
+            longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
         }
 
@@ -91,7 +91,7 @@ public class ConfigServletInner {
         /**
          * 2.0.4版本以前, 返回值放入header中
          */
-        if (versionNum < START_LONGPULLING_VERSION_NUM) {
+        if (versionNum < START_LONGPOLLING_VERSION_NUM) {
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE, oldResult);
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE_NEW, newResult);
         } else {
@@ -137,7 +137,7 @@ public class ConfigServletInner {
                 if (isBeta) {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
-                    if (STANDALONE_MODE) {
+                    if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
                         configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
@@ -154,7 +154,7 @@ public class ConfigServletInner {
                                     lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
                                 }
                             }
-                            if (STANDALONE_MODE) {
+                            if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
                                 configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
@@ -165,7 +165,7 @@ public class ConfigServletInner {
                         } else {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
-                            if (STANDALONE_MODE) {
+                            if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
                                 configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
                             } else {
                                 file = DiskUtil.targetFile(dataId, group, tenant);
@@ -197,7 +197,7 @@ public class ConfigServletInner {
                                 }
                             }
                         }
-                        if (STANDALONE_MODE) {
+                        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
                             configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
                         } else {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
@@ -227,14 +227,14 @@ public class ConfigServletInner {
                 response.setHeader("Pragma", "no-cache");
                 response.setDateHeader("Expires", 0);
                 response.setHeader("Cache-Control", "no-cache,no-store");
-                if (STANDALONE_MODE) {
+                if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
                     response.setDateHeader("Last-Modified", lastModified);
                 } else {
                     fis = new FileInputStream(file);
                     response.setDateHeader("Last-Modified", file.lastModified());
                 }
 
-                if (STANDALONE_MODE) {
+                if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
                     out = response.getWriter();
                     out.print(configInfoBase.getContent());
                     out.flush();

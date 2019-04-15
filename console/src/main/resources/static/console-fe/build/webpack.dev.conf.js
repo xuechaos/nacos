@@ -21,12 +21,12 @@ module.exports = Object.assign({}, base, {
     path: path.resolve(__dirname, '../dist'),
   },
   devServer: {
-    port: 8000,
+    port: process.env.PORT || 8000,
     proxy: [{
       context: ['/'],
       changeOrigin: true,
       secure: false,
-      target: 'http://11.163.128.36:8848',
+      target: 'http://localhost:8848',
       pathRewrite: {'^/v1' : '/nacos/v1'}
     }],
     disableHostCheck: true,

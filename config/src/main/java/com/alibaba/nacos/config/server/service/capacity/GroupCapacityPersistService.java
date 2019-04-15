@@ -19,9 +19,9 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.google.common.collect.Lists;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -34,7 +34,7 @@ import javax.annotation.PostConstruct;
 import java.sql.*;
 import java.util.List;
 
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
@@ -127,9 +127,6 @@ public class GroupCapacityPersistService {
             GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
             PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
                 @Override
-                @SuppressFBWarnings(value = {"OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE",
-                    "SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING"},
-                    justification = "findbugs does not trust jdbctemplate, sql is constant in practice")
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
                     PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                     String group = capacity.getGroup();
@@ -281,7 +278,7 @@ public class GroupCapacityPersistService {
     public List<GroupCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
         String sql = "SELECT id, group_id FROM group_capacity WHERE id>? LIMIT ?";
 
-        if (STANDALONE_MODE) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             sql = "SELECT id, group_id FROM group_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
         }
         try {
@@ -305,9 +302,6 @@ public class GroupCapacityPersistService {
         try {
             PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
                 @Override
-                @SuppressFBWarnings(value = {"OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE",
-                    "SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING"},
-                    justification = "findbugs does not trust jdbctemplate, sql is constant in practice")
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
                     PreparedStatement ps = connection.prepareStatement(
                         "DELETE FROM group_capacity WHERE group_id = ?;");

@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.util.UuidUtil;
+import com.alibaba.nacos.common.util.UuidUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -36,6 +36,7 @@ import java.util.Map;
  * Http tool
  *
  * @author Nacos
+ *
  */
 public class HttpSimpleClient {
 
@@ -100,6 +101,7 @@ public class HttpSimpleClient {
     static public HttpResult httpPost(String url, List<String> headers, List<String> paramValues,
                                       String encoding, long readTimeoutMs, boolean isSSL) throws IOException {
         String encodedContent = encodingParams(paramValues, encoding);
+        encodedContent = (null == encodedContent) ? "" : encodedContent;
         if (Limiter.isLimit(MD5.getInstance().getMD5String(
             new StringBuilder(url).append(encodedContent).toString()))) {
             return new HttpResult(NacosException.CLIENT_OVER_THRESHOLD,
@@ -216,7 +218,7 @@ public class HttpSimpleClient {
         newHeaders.add("exConfigInfo");
         newHeaders.add("true");
         newHeaders.add("RequestId");
-        newHeaders.add(UuidUtil.generateUuid());
+        newHeaders.add(UuidUtils.generateUuid());
         if (headers != null) {
             newHeaders.addAll(headers);
         }

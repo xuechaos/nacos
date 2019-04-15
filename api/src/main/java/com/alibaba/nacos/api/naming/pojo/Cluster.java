@@ -15,13 +15,13 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.nacos.api.common.Constants;
-
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Cluster
+ *
+ * @author nkorange
  */
 public class Cluster {
 
